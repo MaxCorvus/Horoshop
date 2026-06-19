@@ -1,0 +1,149 @@
+@baseUrl = http://127.0.0.1:8000
+
+### Login as root
+POST {{baseUrl}}/v1/api/login
+Content-Type: application/json
+
+{
+    "login": "root",
+    "pass": "rootpass"
+}
+
+> {%
+    client.global.set("root_token", response.body.token);
+%}
+
+### Root creates user
+POST {{baseUrl}}/v1/api/users
+Authorization: Bearer {{root_token}}
+Content-Type: application/json
+
+{
+    "login": "max",
+    "phone": "12345678",
+    "pass": "maxpass"
+}
+
+> {%
+    client.global.set("user_id", response.body.id);
+%}
+
+### Root creates another user
+POST {{baseUrl}}/v1/api/users
+Authorization: Bearer {{root_token}}
+Content-Type: application/json
+
+{
+    "login": "other",
+    "phone": "87654321",
+    "pass": "othpass"
+}
+
+> {%
+    client.global.set("other_user_id", response.body.id);
+%}
+
+### Root gets user
+GET {{baseUrl}}/v1/api/users/{{user_id}}
+Authorization: Bearer {{root_token}}
+
+### Root updates user
+PUT {{baseUrl}}/v1/api/users/{{user_id}}
+Content-Type: application/json
+Authorization: Bearer {{root_token}}
+
+{
+    "login": "max2",
+    "phone": "22222222",
+    "pass": "newpass"
+}
+
+
+### Login as regular user
+POST {{baseUrl}}/v1/api/login
+Content-Type: application/json
+
+{
+    "login": "max2",
+    "pass": "newpass"
+}
+
+> {%
+    client.global.set("user_token", response.body.token);
+%}
+
+
+### User gets himself
+GET {{baseUrl}}/v1/api/users/{{user_id}}
+Authorization: Bearer {{user_token}}
+
+
+### User updates himself
+PUT {{baseUrl}}/v1/api/users/{{user_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+    "login": "newUser",
+    "phone": "33333333",
+    "pass": "newuserp"
+}
+
+### Login as updated regular user
+POST {{baseUrl}}/v1/api/login
+Content-Type: application/json
+
+{
+    "login": "newUser",
+    "pass": "newuserp"
+}
+
+> {%
+    client.global.set("user_token", response.body.token);
+%}
+
+
+### User tries to create another user
+POST {{baseUrl}}/v1/api/users
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+    "login": "abc",
+    "phone": "44444444",
+    "pass": "abc123"
+}
+
+### User tries to update another user
+PUT {{baseUrl}}/v1/api/users/{{other_user_id}}
+Content-Type: application/json
+Authorization: Bearer {{user_token}}
+
+{
+    "login": "abc",
+    "phone": "44444444",
+    "pass": "abc123"
+}
+
+### User tries to delete himself
+DELETE {{baseUrl}}/v1/api/users/{{user_id}}
+Authorization: Bearer {{user_token}}
+
+
+### Root deletes user
+DELETE {{baseUrl}}/v1/api/users/{{user_id}}
+Authorization: Bearer {{root_token}}
+
+### Request without token
+GET {{baseUrl}}/v1/api/users/1
+
+### Validation error - login too long, phone is empty
+POST {{baseUrl}}/v1/api/users
+Content-Type: application/json
+Authorization: Bearer {{root_token}}
+
+{
+    "login": "toolonglogin",
+    "phone": "",
+    "pass": "123456"
+}
